@@ -4,14 +4,34 @@ import typing as t
 from abc import ABC, abstractmethod
 
 from vk_friends.formats_supported import FORMATS_SUPPORTED
+from vk_friends.exceptions import ServerResponseError, ApiParameterError
 
 
 class ReportGenerator(ABC):
-    def __init__(self, report_path: t.Union[str, os.PathLike] = "./report") -> None:
+    indent = 2
+
+    def __init__(
+        self,
+        auth_token: str,
+        user_id: str,
+        report_path: t.Union[str, os.PathLike] = "./report",
+        fields: t.List[str] = ["first_name", "last_name", "bdate"],
+    ) -> None:
+        self.auth_token = auth_token
+        self.user_id = user_id
         self.report_path = report_path
+        self.fields = fields
 
     @abstractmethod
-    def _serialize(self, data: dict) -> None:
+    def _initialize_document(self) -> str:
+        return NotImplemented
+
+    @abstractmethod
+    def _prepare_item(self) -> str:
+        return NotImplemented
+
+    @abstractmethod
+    def _conclude_document(self) -> str:
         return NotImplemented
 
     @abstractmethod
@@ -22,7 +42,12 @@ class ReportGenerator(ABC):
 class ReportGeneratorFactory:
     @classmethod
     def get_report_generator(
-        self, report_format: FORMATS_SUPPORTED, report_path: t.Union[str, os.PathLike]
+        self,
+        auth_token: str,
+        user_id: str,
+        report_format: FORMATS_SUPPORTED,
+        report_path: t.Union[str, os.PathLike],
+        fields: t.List[str] = ["first_name", "last_name", "bdate"],
     ) -> ReportGenerator:
         """Get ReportGenerator instance according to provided
         report_format.
@@ -41,11 +66,11 @@ class ReportGeneratorFactory:
             ReportGenerator: implementation of abstract class ReportGenerator
         """
         if report_format == FORMATS_SUPPORTED.CSV:
-            return CsvReportGenerator(report_path)
+            return CsvReportGenerator(auth_token, user_id, report_path, fields)
         elif report_format == FORMATS_SUPPORTED.TSV:
-            return TsvReportGenerator(report_path)
+            return TsvReportGenerator(auth_token, user_id, report_path, fields)
         elif report_format == FORMATS_SUPPORTED.JSON:
-            return JsonReportGenerator(report_path)
+            return JsonReportGenerator(auth_token, user_id, report_path, fields)
         else:
             raise NotImplementedError(
                 f"No implementation for report generator of format: {report_format}"
@@ -53,42 +78,80 @@ class ReportGeneratorFactory:
 
 
 class CsvReportGenerator(ReportGenerator):
-    def _serialize(self, data: dict) -> None:
-        return f"Some csv data: {data}"
+    def _initialize_document(self) -> str:
+        return ""
+
+    def _prepare_item(self) -> str:
+        return ""
+
+    def _conclude_document(self) -> str:
+        return ""
 
     def generate_report(self) -> None:
         ...
-        # return "Generating report...", self._serialize(data)
 
 
 class TsvReportGenerator(ReportGenerator):
-    def _serialize(self, data: dict) -> None:
-        return f"Some tsv data: {data}"
+    def _initialize_document(self) -> str:
+        return ""
+
+    def _prepare_item(self) -> str:
+        return ""
+
+    def _conclude_document(self) -> str:
+        return ""
 
     def generate_report(self) -> None:
         ...
-        # return "Generating report...", self._serialize(data)
 
 
 class JsonReportGenerator(ReportGenerator):
-    def _serialize(self, data: dict) -> None:
-        return f"Some json data: {data}"
+    def _initialize_document(self) -> str:
+        return "\n".join(
+            [
+                "{",
+                f'  "auth_token": "{self.auth_token}",',
+                f'  "user_id": "{self.user_id}",',
+                '  "friends": [\n',
+            ]
+        )
 
-    def generate_report(self) -> t.Generator:
-        fs = open(f"{self.report_path}.json", "wb")
-        fs.write(b"{")
-        while True:
-            data = yield
+    def _prepare_item(self, item):
+        level = 2
+        json_string = json.dumps(
+            item,
+            indent=self.indent + level * self.indent,
+            separators=(",", ": "),
+            ensure_ascii=False,
+        )
+        return (
+            (level * self.indent * " ")
+            + f"{json_string[:-1]}"
+            + (level * self.indent * " " + "},\n")
+        )
 
-            if not data:
-                fs.write(b"}")
-                fs.close()
-                raise GeneratorExit
+    def _conclude_document(self) -> str:
+        return "\n".join(["\n  ]", "}"])
 
-            fs.write(
-                json.dumps(
-                    data, indent=2, separators=(",", ": "), ensure_ascii=False
-                ).encode("utf-8")
-            )
+    def generate_report(self, data_fetcher) -> None:
+        file_stream = open(f"{self.report_path}.json", "wb")
+        file_stream.write(bytes(self._initialize_document(), "utf-8"))
+        for fetch_response in data_fetcher:
+            if fetch_response["status_code"] != 200:
+                raise ServerResponseError(
+                    f"Could not get proper response from API. Status code: {fetch_response['status_code']}; Error: {fetch_response['error']}"
+                )
 
-        # return "Generating report...", self._serialize(data)
+            if "error" in fetch_response["data"]:
+                raise ApiParameterError(
+                    f"Could not properly request API. Status code: {fetch_response['data']['error']['error_code']}; Error: {fetch_response['data']['error']['error_msg']}"
+                )
+
+            if "response" in fetch_response["data"]:
+                for friend in fetch_response["data"]["response"]["items"]:
+                    file_stream.write(bytes(self._prepare_item(friend), "utf-8"))
+
+        file_stream.seek(-2, os.SEEK_END)
+        file_stream.truncate()
+        file_stream.write(bytes(self._conclude_document(), "utf-8"))
+        file_stream.close()
