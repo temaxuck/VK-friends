@@ -1,0 +1,6 @@
+class ServerResponseError(Exception):
+    ...
+
+
+class ApiParameterError(Exception):
+    ...
