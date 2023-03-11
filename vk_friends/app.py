@@ -95,7 +95,9 @@ class VKFriends:
 
         if limit:
             self.limit = limit
-            self.count = limit if limit < self.count else self.count
+            self.count = (
+                limit if limit < self.count else self.count
+            )  # if limit is less than count then count = limit
 
         if offset:
             self.offset = offset
@@ -142,24 +144,27 @@ class VKFriends:
                 "data": (dict) response itself (json format)
             }
         """
-        _current_page = 0
-        _should_break = False
+        _current_page = 0  # current number of pages
+        _should_break = False  # flag to break while True: loop
         while True:
-            _current_offset = _current_page * self.count
-            if self.limit:
-                if _current_offset + self.count <= self.limit:
-                    _count = self.count
-                else:
-                    _count = self.limit - self.count
-                    _should_break = True
-                print(_should_break, self.count)
 
+            _current_offset = _current_page * self.count  # left bound of interval
+            if self.limit:  # if limit is present then check if fetched items is enough
+                if (
+                    _current_offset + self.count <= self.limit
+                ):  # if right bound of interval <= limit
+                    _count = self.count  # _count = self.count
+                else:  # right bound of interval is > limit
+                    _count = (
+                        self.limit - _current_offset
+                    )  # _count = limit - left bound of interval
+                    _should_break = True  # this is going to be last iteration
             else:
                 _count = self.count
 
             try:
                 params = {
-                    "offset": self.offset + _current_offset,
+                    "offset": self.offset + _current_offset,  # initial offset + current
                     "count": _count,
                     "order": "name",
                     "user_id": self.user_id,
@@ -190,7 +195,7 @@ class VKFriends:
             }
 
             try:
-                if not data["response"]["items"]:
+                if not data["response"]["items"]:  # empty list of items
                     break
             except KeyError:
                 yield result

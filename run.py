@@ -11,6 +11,8 @@ if __name__ == "__main__":
         user_id=user_id,
         report_format="csv",
         report_path=".",
+        count=5,
+        limit=12,
     )
 
     app.generate_report()
