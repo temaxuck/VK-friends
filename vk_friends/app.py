@@ -33,7 +33,9 @@ class VKFriends:
         "bdate",
         "sex",
     ]  # specific values to fetch from API
-    limit = 100
+    offset = 0
+    count = 100
+    limit = None
 
     def __init__(
         self,
@@ -45,6 +47,8 @@ class VKFriends:
         api_url: str = None,
         request_timeout: float = None,
         limit: int = None,
+        offset: int = None,
+        count: int = None,
     ) -> None:
         """
         Initialize VKFriends app
@@ -61,8 +65,12 @@ class VKFriends:
             api_version (str): vk API version (5.131 by default)
             request_timeout (float): time (in seconds) in which app will stop
                 trying to request API server (30 by default)
-            limit (int): number of items to fetch from API per one request (100
-                by default)
+            limit (int): number of items to fetch from API (None by default)
+            offset (int): number of items to discard from the beginning of friend list
+                (0 by default)
+            count (int): number of items to fetch from API per one request. `count` = `limit`
+                if `limit` is less than `count` (100 by default)
+
         """
         self.auth_token = auth_token
         self.user_id = user_id
@@ -82,8 +90,15 @@ class VKFriends:
         if request_timeout:
             self.request_timeout = request_timeout
 
+        if count:
+            self.count = count
+
         if limit:
             self.limit = limit
+            self.count = limit if limit < self.count else self.count
+
+        if offset:
+            self.offset = offset
 
     def generate_report(self) -> None:
         """Generates report with provided in app settings:
@@ -127,12 +142,25 @@ class VKFriends:
                 "data": (dict) response itself (json format)
             }
         """
-        current_page = 0
+        _current_page = 0
+        _should_break = False
         while True:
+            _current_offset = _current_page * self.count
+            if self.limit:
+                if _current_offset + self.count <= self.limit:
+                    _count = self.count
+                else:
+                    _count = self.limit - self.count
+                    _should_break = True
+                print(_should_break, self.count)
+
+            else:
+                _count = self.count
+
             try:
                 params = {
-                    "offset": current_page * self.limit,
-                    "count": self.limit,
+                    "offset": self.offset + _current_offset,
+                    "count": _count,
                     "order": "name",
                     "user_id": self.user_id,
                     "fields": ",".join(self.fields),
@@ -155,20 +183,23 @@ class VKFriends:
                 raise ServerResponseError(exception) from exception
 
             data = response.json()
-            try:
-                if not data["response"]["items"]:
-                    break
-            except KeyError:
-                yield {
-                    "status_code": response.status_code,
-                    "error": response.reason,
-                    "data": response.json(),
-                }
-                break
-            yield {
+            result = {
                 "status_code": response.status_code,
                 "error": response.reason,
                 "data": response.json(),
             }
 
-            current_page += 1
+            try:
+                if not data["response"]["items"]:
+                    break
+            except KeyError:
+                yield result
+                break
+
+            if _should_break:
+                yield result
+                break
+
+            yield result
+
+            _current_page += 1
