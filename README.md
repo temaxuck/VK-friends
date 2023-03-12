@@ -16,7 +16,6 @@ python -m pip install .
 
 Usage
 -----
-
     $ vkfriends --help
         Usage: vkfriends [OPTIONS]
 
@@ -46,3 +45,6 @@ Usage
                                     request. 100 by default.
         --help                       Show this message and exit.
     
+Authentication token
+--------------------
+To get authentication token I recommend using https://vkhost.github.io/
