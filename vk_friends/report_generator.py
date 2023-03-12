@@ -132,8 +132,8 @@ class ReportGenerator(ABC):
         if "error" in fetch_response["data"]:
             # API responded with error
             raise ApiParameterError(
-                "Could not properly request API. Status code:"
-                f"{fetch_response['data']['error']['error_code']};"
+                "Could not properly request API. Status code: "
+                f"{fetch_response['data']['error']['error_code']}; "
                 f"Error: {fetch_response['data']['error']['error_msg']}"
             )
 

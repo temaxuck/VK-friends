@@ -2,6 +2,7 @@
 
 import click
 from vk_friends import VKFriends
+from vk_friends.exceptions import ServerResponseError, ApiParameterError
 from vk_friends.constants import FORMATS_SUPPORTED
 
 
@@ -125,6 +126,11 @@ def run(
         count=count,
     )
 
-    app.generate_report()
-
-    print("Report has been generated successfully!")
+    try:
+        app.generate_report()
+    except Exception as exception:
+        print(
+            "Generating of report failed, due to following error:\n"
+            + "=" * 50
+            + f"\n{exception}"
+        )
