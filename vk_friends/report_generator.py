@@ -19,6 +19,7 @@ import json
 import os
 import typing as t
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from vk_friends.exceptions import ApiParameterError, ServerResponseError
 from vk_friends.constants import FORMATS_SUPPORTED, VK_GENDERS
@@ -151,6 +152,20 @@ class ReportGenerator(ABC):
         except KeyError:
             return value
 
+    def generate_report(self, data_fetcher: t.Generator) -> None:
+        """Wrapper around self._generate_report.
+
+        Args:
+            data_fetcher (t.Generator): generator function that
+                incrementally fetches data from API.
+        """
+        path = Path(self.report_path)
+        print(f"Creating file {path.absolute()}")
+
+        self._generate_report(data_fetcher)
+
+        print(f"Saving report into {path.absolute()}")
+
     @abstractmethod
     def get_extension(self) -> str:
         """Get report file's extension
@@ -194,7 +209,7 @@ class ReportGenerator(ABC):
         return NotImplemented
 
     @abstractmethod
-    def generate_report(self, data_fetcher: t.Generator) -> None:
+    def _generate_report(self, data_fetcher: t.Generator) -> None:
         """Write report in the file. Gets data from data_fetcher.
         data_fetcher shall be generator function that incrementally
         fetches data from API.
@@ -270,7 +285,7 @@ class CsvReportGenerator(ReportGenerator):
     def _conclude_document(self) -> str:
         return NotImplemented
 
-    def generate_report(self, data_fetcher: t.Generator) -> None:
+    def _generate_report(self, data_fetcher: t.Generator) -> None:
         with open(
             self.report_path, "w", newline="", encoding="utf-8-sig"
         ) as file_stream:
@@ -305,7 +320,7 @@ class TsvReportGenerator(ReportGenerator):
     def _conclude_document(self) -> str:
         return NotImplemented
 
-    def generate_report(self, data_fetcher: t.Generator) -> None:
+    def _generate_report(self, data_fetcher: t.Generator) -> None:
         # same implementation as csv but use tab as delimiter
         with open(
             self.report_path, "w", newline="", encoding="utf-8-sig"
@@ -364,9 +379,11 @@ class JsonReportGenerator(ReportGenerator):
     def _conclude_document(self) -> str:
         return "\n".join(["\n  ]", "}"])
 
-    def generate_report(self, data_fetcher: t.Generator) -> None:
+    def _generate_report(self, data_fetcher: t.Generator) -> None:
         file_stream = open(f"{self.report_path}", "wb")
         file_stream.write(bytes(self._initialize_document(), "utf-8"))
+
+        data_was_fetched = False
 
         for fetch_response in data_fetcher:
             self.check_for_exceptions(fetch_response)
@@ -375,7 +392,10 @@ class JsonReportGenerator(ReportGenerator):
                 for friend in fetch_response["data"]["response"]["items"]:
                     file_stream.write(bytes(self._prepare_item(friend), "utf-8"))
 
-        file_stream.seek(-2, os.SEEK_END)
+            data_was_fetched = True
+
+        if data_was_fetched:
+            file_stream.seek(-2, os.SEEK_END)
         file_stream.truncate()
         file_stream.write(bytes(self._conclude_document(), "utf-8"))
         file_stream.close()

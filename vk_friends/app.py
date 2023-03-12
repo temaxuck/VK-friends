@@ -154,15 +154,14 @@ class VKFriends:
         _current_page = 0  # current number of pages
         _should_break = False  # flag to break while True: loop
         while True:
-            _current_offset = _current_page * self.count  # left bound of interval
+            _left_bound = _current_page * self.count  # left bound of interval
+            _right_bound = _left_bound + self.count
             if self.limit:  # if limit is present then check if fetched items is enough
-                if (
-                    _current_offset + self.count <= self.limit
-                ):  # if right bound of interval <= limit
+                if _right_bound <= self.limit:  # if right bound of interval <= limit
                     _count = self.count  # _count = self.count
                 else:  # right bound of interval is > limit
                     _count = (
-                        self.limit - _current_offset
+                        self.limit - _left_bound
                     )  # _count = limit - left bound of interval
                     _should_break = True  # this is going to be last iteration
             else:
@@ -170,7 +169,7 @@ class VKFriends:
 
             try:
                 params = {
-                    "offset": self.offset + _current_offset,  # initial offset + current
+                    "offset": self.offset + _left_bound,  # initial offset + current
                     "count": _count,
                     "order": "name",
                     "user_id": self.user_id,
@@ -206,6 +205,12 @@ class VKFriends:
             except KeyError:
                 yield result
                 break
+
+            print(
+                "Fetched "
+                f"{data['response']['count'] - self.offset if data['response']['count'] < _right_bound else _right_bound - self.offset}"
+                f" out of {data['response']['count']} friends..."
+            )
 
             if _should_break:
                 yield result
