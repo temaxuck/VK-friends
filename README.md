@@ -48,3 +48,14 @@ Usage
 Authentication token
 --------------------
 To get authentication token I recommend using official application: https://vkhost.github.io/
+
+Example usage
+-------------
+To generate report for user_id = 205387401 in json format, with offset = 30 and limit = 20 run this command:
+
+    $ vkfriends -u 205387401 -f json -l 20 -o 30 
+    Enter your authentication token: 
+    Creating VKFriends app...
+    Creating file /mnt/c/Users/gorro/Desktop/Codie/Python/Interview_Questions/Improvado/Improvado-Interview-Assignment/report.json
+    Fetched 20 out of 87 friends
+    Saving report into /mnt/c/Users/gorro/Desktop/Codie/Python/Interview_Questions/Improvado/Improvado-Interview-Assignment/report.json
