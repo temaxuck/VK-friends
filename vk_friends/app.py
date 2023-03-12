@@ -13,7 +13,7 @@ from requests.exceptions import (
 
 from vk_friends.constants import FORMATS_SUPPORTED
 from vk_friends.report_generator import ReportGeneratorFactory
-from vk_friends.exceptions import ServerResponseError, ApiParameterError
+from vk_friends.exceptions import ServerResponseError
 
 
 class VKFriends:
@@ -46,6 +46,7 @@ class VKFriends:
         api_version: str = None,
         api_url: str = None,
         request_timeout: float = None,
+        fields: t.List[str] = None,
         limit: int = None,
         offset: int = None,
         count: int = None,
@@ -55,7 +56,7 @@ class VKFriends:
 
         Args:
             auth_token (str): authentication token (see dev.vk.com, how to get one)
-            user_id (str): id of the user whose friends we want to see through
+            user_id (str): id of the user whose friends we want to see
             report_format (FORMATS_SUPPORTED): format of the report (supported formats
                 specified in enumeration class FORMATS SUPPORTED)
             report_path (t.Union[str, os.PathLike]): path to save report file. Can be
@@ -74,8 +75,10 @@ class VKFriends:
         """
         self.auth_token = auth_token
         self.user_id = user_id
+
+        # handling report_format
         self.report_format = (
-            FORMATS_SUPPORTED(report_format)
+            FORMATS_SUPPORTED(report_format.lower())
             if isinstance(report_format, str)
             else report_format
         )
@@ -89,6 +92,9 @@ class VKFriends:
 
         if request_timeout:
             self.request_timeout = request_timeout
+
+        if fields:
+            self.fields = fields
 
         if count:
             self.count = count
@@ -144,10 +150,10 @@ class VKFriends:
                 "data": (dict) response itself (json format)
             }
         """
+
         _current_page = 0  # current number of pages
         _should_break = False  # flag to break while True: loop
         while True:
-
             _current_offset = _current_page * self.count  # left bound of interval
             if self.limit:  # if limit is present then check if fetched items is enough
                 if (
@@ -191,7 +197,7 @@ class VKFriends:
             result = {
                 "status_code": response.status_code,
                 "error": response.reason,
-                "data": response.json(),
+                "data": data,
             }
 
             try:

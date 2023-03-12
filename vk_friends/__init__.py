@@ -34,7 +34,7 @@
            
 """
 
-from .app import VKFriends as VKFriends
-from .constants import FORMATS_SUPPORTED as FORMATS_SUPPORTED
+from .app import VKFriends
+from .constants import FORMATS_SUPPORTED
 
 __all__ = ["VKFriends", "FORMATS_SUPPORTED"]

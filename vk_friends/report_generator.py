@@ -1,3 +1,19 @@
+"""report_generator.py
+Module contains logic used in generating reports.
+You may create ReportGenerator instance using this 
+example:
+    from vk_friends.report_generator import ReportGeneratorFactory
+    
+    ReportGeneratorFactory.get_report_generator(
+        auth_token="token",
+        user_id="user_id",
+        report_format=(
+            FORMATS_SUPPORTED.CSV
+        ), # from vk_friends.constants import FORMATS_SUPPORTED
+        report_path="."
+    )
+"""
+
 import csv
 import json
 import os
@@ -65,10 +81,10 @@ class ReportGenerator(ABC):
         Args:
             auth_token (str): authentication token (see dev.vk.com, how to get one)
             user_id (str): id of the user whose friends we want to see through
-            report_path (t.Union[sreport_path (t.Union[str, os.PathLike]): path to save report file. Can be
-                directory (in this case the report file will be saved in provided
-                directory with name report.{extension}) or full path (for example, /home/
-                reports/report.{extension}) ('./report' by default)
+            report_path (t.Union[sreport_path (t.Union[str, os.PathLike]): path to save
+                report file. Can be directory (in this case the report file will be saved
+                in provided directory with name report.{extension}) or full path (for
+                example, /home/reports/report.{extension}) ('./report' by default)
             fields (t.List[str], optional): fields to fetch from API (None by default).
         """
         self.auth_token = auth_token
@@ -107,13 +123,17 @@ class ReportGenerator(ABC):
         if fetch_response["status_code"] != 200:
             # Response status is not OK
             raise ServerResponseError(
-                f"Could not get proper response from API. Status code: {fetch_response['status_code']}; Error: {fetch_response['error']}"
+                "Could not get proper response from API. Status code:"
+                f"{fetch_response['status_code']};"
+                f"Error: {fetch_response['error']}"
             )
 
         if "error" in fetch_response["data"]:
             # API responded with error
             raise ApiParameterError(
-                f"Could not properly request API. Status code: {fetch_response['data']['error']['error_code']}; Error: {fetch_response['data']['error']['error_msg']}"
+                "Could not properly request API. Status code:"
+                f"{fetch_response['data']['error']['error_code']};"
+                f"Error: {fetch_response['data']['error']['error_msg']}"
             )
 
     def handle_field(self, field: str, value: t.Any) -> t.Any:
@@ -150,7 +170,7 @@ class ReportGenerator(ABC):
         return NotImplemented
 
     @abstractmethod
-    def _prepare_item(self, item: dict) -> dict:
+    def _prepare_item(self, item: dict) -> t.Any:
         """Get prepared item for writing it in the report file.
         Usually handle_field method is used to extract values valid
         for writing in report file from each field of item.
@@ -193,12 +213,12 @@ class ReportGeneratorFactory:
 
     @classmethod
     def get_report_generator(
-        self,
+        cls,
         auth_token: str,
         user_id: str,
         report_format: FORMATS_SUPPORTED,
         report_path: t.Union[str, os.PathLike],
-        fields: t.List[str] = ["first_name", "last_name", "bdate"],
+        fields: t.List[str] = None,
     ) -> ReportGenerator:
         """Get ReportGenerator instance according to provided
         report_format.
@@ -322,7 +342,7 @@ class JsonReportGenerator(ReportGenerator):
             ]
         )
 
-    def _prepare_item(self, item: dict) -> dict:
+    def _prepare_item(self, item: dict) -> str:
         level = 2
         item_to_proceed = {
             field: self.handle_field(field, item.get(field)) for field in self.fields

@@ -4,8 +4,6 @@ handle specific field of `user` object that is to be prepared
 for writing in report file
 """
 
-import typing as t
-
 
 def bdate_handler(value: str) -> str:
     """bdate field handler.
