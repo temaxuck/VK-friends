@@ -3,7 +3,7 @@
 vkfriends
 =============
 
-Command line interface for generating reports of vk friends of certain
+Command line interface for generating reports of vk friends of a certain
 user 
 
 Installation
@@ -47,4 +47,4 @@ Usage
     
 Authentication token
 --------------------
-To get authentication token I recommend using https://vkhost.github.io/
+To get authentication token I recommend using official application: https://vkhost.github.io/
