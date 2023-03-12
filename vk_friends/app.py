@@ -206,11 +206,19 @@ class VKFriends:
                 yield result
                 break
 
-            print(
-                "Fetched "
-                f"{data['response']['count'] - self.offset if data['response']['count'] < _right_bound else _right_bound - self.offset}"
-                f" out of {data['response']['count']} friends..."
-            )
+            if (
+                response_count := data["response"]["count"]
+            ) < _right_bound + self.offset:
+                print(
+                    f"Fetched {response_count - self.offset} out of {response_count} friends..."
+                )
+            else:
+                if _right_bound > self.offset:
+                    print(
+                        f"Fetched {_right_bound - self.offset} out of {response_count} friends"
+                    )
+                else:
+                    print(f"Fetched {_right_bound} out of {response_count} friends")
 
             if _should_break:
                 yield result
