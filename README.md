@@ -9,15 +9,13 @@ user
 Installation
 ------------
 ```
-    git clone https://github.com/temaxuck/Improvado-Interview-Assignment.git
-    cd  Improvado-Interview-Assignment
-    python -m pip install .
+git clone https://github.com/temaxuck/Improvado-Interview-Assignment.git
+cd  Improvado-Interview-Assignment
+python -m pip install .
 ```
 
 Usage
 -----
-
-::
 
     $ vkfriends --help
         Usage: vkfriends [OPTIONS]
