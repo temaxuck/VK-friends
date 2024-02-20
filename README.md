@@ -1,4 +1,4 @@
-# Improvado-Interview-Assignment
+# VK-friends utility
 
 vkfriends
 =============
@@ -9,8 +9,8 @@ user
 Installation
 ------------
 ```
-git clone https://github.com/temaxuck/Improvado-Interview-Assignment.git
-cd  Improvado-Interview-Assignment
+git clone https://github.com/temaxuck/VK-friends.git
+cd  VK-friends
 python -m pip install .
 ```
 
@@ -56,6 +56,6 @@ To generate report for user_id = 205387401 in json format, with offset = 30 and 
     $ vkfriends -u 205387401 -f json -l 20 -o 30 
     Enter your authentication token: 
     Creating VKFriends app...
-    Creating file /mnt/c/Users/gorro/Desktop/Codie/Python/Interview_Questions/Improvado/Improvado-Interview-Assignment/report.json
+    Creating file ./report.json
     Fetched 20 out of 87 friends
-    Saving report into /mnt/c/Users/gorro/Desktop/Codie/Python/Interview_Questions/Improvado/Improvado-Interview-Assignment/report.json
+    Saving report into ./report.json
